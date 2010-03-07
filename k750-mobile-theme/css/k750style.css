@@ -1,0 +1,114 @@
+  html, body {
+  margin:0;
+  padding:0;
+  background:#E6DFC5;
+  text-align:center;
+  font-family:'Trebuchet MS', Verdana, Sans-Serif;
+  }
+  #column {
+  width:800px;
+  margin:0 auto;
+  text-align:left;
+  background:#fff;
+  padding:10px;
+  }
+  #header {
+  padding:10px;
+  }
+  a:link, a:visited {
+  color:#624D0C;
+  }
+  a:hover {
+  color:#000000;
+  }
+  h1 {
+  color:#E0D4AF;
+  font-weight:100;
+  letter-spacing:-0.08em;
+  text-align:right;
+  font-size:200%;
+  margin:0 0 10px 0;
+  }
+  h1 a {
+  color:#E0D4AF;  
+  }
+  h2 {
+  font-weight:100;
+  font-size:180%;
+  color:#624D0C;
+  margin:0 0 20px 0;
+  }
+  h2 a {
+  color:#624D0C;  
+  }
+  h3 {
+  color:#E0D4AF;
+  font-weight:100;
+  font-size:110%;
+  margin:0 0 5px 0;
+  }
+  h3 a {
+  color:#E0D4AF;  
+  }
+  #otherLinks {
+  list-style:none;
+  margin:0;
+  padding:0;
+  }
+  #otherLinks li {
+  margin:0;
+  padding:0;
+  }
+  .box {
+  margin-top:10px;
+  background:#FCFAF1;
+  padding:10px;
+  }
+  .bottomBox {
+  margin-top:10px;
+  background:#FCFAF1;
+  }
+  .message {
+  float:left;
+  width:560px;
+  padding:10px;
+  background:#FCFAF1;
+  }
+  .linkBox {
+  float:right;
+  width:190px;
+  border-left:solid 10px #fff;
+  padding:10px;
+  background:#FCFAF1;
+  }
+  .imageBox {
+  margin:100px 0 10px 0;
+  padding:10px;
+  clear:both;
+  text-align:center;
+  background:#FBF4DA;
+  }
+  .resultBox {
+  float:left;
+  margin:0 10px 10px 0;
+  }
+  .resultBox, .resultBox td, .resultBox th {    
+  border-style:solid;
+  border-width:1px;
+  background-color:#fff;
+  border-collapse:collapse;
+  padding:2px;
+  }
+  .resultBox .total {
+  background:#E6DFC5;
+  } 
+  .ads {
+  text-align:center;
+  }
+  .clear {
+  clear:both;
+  }
+  .leftImage {
+  margin:0 5px 5px 0;
+  float:left;
+  }

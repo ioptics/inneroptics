@@ -1,0 +1,115 @@
+  html, body {
+  margin:0;
+  padding:0;
+  background:#C5DEE6;
+  text-align:center;
+  font-family:'Trebuchet MS', Verdana, Sans-Serif;
+  }
+  #column {
+  width:800px;
+  margin:0 auto;
+  text-align:left;
+  background:#fff;
+  padding:10px;
+  }
+  #header {
+  padding:10px;
+  }
+  a:link, a:visited {
+  color:#0C2C62;
+  }
+  a:hover {
+  color:#000000;
+  }
+  h1 {
+  color:#AFD5E0;
+  font-weight:100;
+  letter-spacing:-0.08em;
+  text-align:right;
+  font-size:200%;
+  margin:0 0 10px 0;
+  }
+  h1 a {
+  color:#AFD5E0;  
+  }
+  h3 {
+  color:#AFD5E0;
+  font-weight:100;
+  font-size:110%;
+  margin:0 0 5px 0;
+  }
+  h3 a {
+  color:#AFD5E0;  
+  }
+  #otherLinks {
+  list-style:none;
+  margin:0;
+  padding:0;
+  }
+  #otherLinks li {
+  margin:0;
+  padding:0;
+  }
+  .box {
+  margin-top:10px;
+  background:#F1FAFC;
+  padding:10px;
+  }
+  .bottomBox {
+  margin-top:10px;
+  background:#F1FAFC;
+  }
+  .message {
+  float:left;
+  width:550px;
+  padding:10px;
+  background:#F1FAFC;
+  }
+  .linkBox {
+  float:right;
+  width:200px;
+  border-left:solid 10px #fff;
+  padding:10px;
+  background:#F1FAFC;
+  font-size:90%;
+  }
+  .imageBox {
+  margin:100px 0 10px 0;
+  padding:10px;
+  clear:both;
+  text-align:center;
+  background:#DAF5FB;
+  }
+  .resultBox {
+  float:left;
+  margin:0 10px 10px 0;
+  }
+  .resultBox, .resultBox td, .resultBox th {    
+  border-style:solid;
+  border-width:1px;
+  background-color:#fff;
+  border-collapse:collapse;
+  padding:2px;
+  }
+  .resultBox .total {
+  background:#C5DEE6;
+  } 
+  .ads {
+  text-align:center;
+  }
+  .clear {
+  clear:both;
+  }
+  h2 {
+  font-weight:100;
+  font-size:180%;
+  color:#0C2C62;
+  margin:0 0 20px 0;
+  }
+  h2 a {
+  color:#0C2C62;  
+  }
+  .leftImage {
+  margin:0 5px 5px 0;
+  float:left;
+  }

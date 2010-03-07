@@ -1,0 +1,8 @@
+body {
+  background:url(../images/ie5message.gif) top no-repeat;
+  height:200px;
+}
+
+body * {
+  display:none;
+}

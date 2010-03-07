@@ -1,0 +1,95 @@
+<?php
+// $Id: insert_view.module,v 1.4 2006/06/04 21:18:11 eaton Exp $
+
+function insert_view_help($section = 'admin/help#insert_view') {
+  $output = '';
+  switch ($section) {
+    case 'admin/modules#description':
+      return t('Inserts content lists into nodes using [view:myview] tags');
+    case 'filter#short-tip':
+      return t('You may use <a href="%insert_view_help">[view:viewname] tags</a> to display listings of nodes.', array("%insert_view_help" => url("filter/tips/$format", NULL, 'filter-insert_view')));
+    case 'filter#long-tip':
+      return t('You may use <a href="%insert_view_help">[view:viewname] tags</a> to display listings of nodes.', array("%insert_view_help" => url("filter/tips/$format", NULL, 'filter-insert_view')));
+  }
+}
+
+function insert_view_filter($op, $delta = 0, $format = -1, $text = '') {
+  // The "list" operation provides the module an opportunity to declare both how
+  // many filters it defines and a human-readable name for each filter. Note that
+  // the returned name should be passed through t() for translation.
+  if ($op == 'list') {
+    return array(
+      0 => t('insert view filter'));
+  }
+
+  // All operations besides "list" provide a $delta argument so we know which
+  // filter they refer to. We'll switch on that argument now so that we can
+  // discuss each filter in turn.
+  switch ($op) {
+    case 'description':
+       return t('Inserts content lists into nodes using [view:myview] tags.');
+    case 'prepare':
+       return $text;
+    case 'process':
+       return $text;
+  }
+}
+
+function insert_view_filter_tips($delta, $format, $long = false) {
+  if ($long) {
+    return t('
+    <p>The Views module allows administrators to create dynamic lists of content for display in pages or blocks. It is also possible to insert those lists into existing node bodies, but such inclusion requires that PHP filtering be turned on. This module allows any user to insert view listings using tag syntax, without the need for PHP execution permissions.</p>
+    
+    <pre>[view:my view]</pre>
+
+    will be replaced by the full listing of content defined by that view.
+
+    <pre>[view:my view=10]</pre>
+
+    will limit the listing to 10 items.
+    ');
+  }
+  else {
+    return t('You may use <a href="%insert_view_help">[view:viewname] tags</a> to display listings of nodes.', array("%insert_view_help" => url("filter/tips/$format", NULL, 'filter-insert_view')));
+  }
+}
+
+function insert_view_nodeapi(&$node, $op, $arg) {
+  if($op == 'view' && function_exists('views_build_view')) {
+    $node->teaser = _insert_view_substitute_tags($node, 'teaser');
+    $node->body = _insert_view_substitute_tags($node, 'body');
+  }
+}
+
+function _insert_view_substitute_tags(&$node, $field) {
+    if (preg_match_all("/\[view:([^=\]]+)=?([^=\]]+)?=?([^\]]*)?\]/i", $node->$field, $match)) {
+       foreach ($match[2] as $key => $value) {
+         $viewname = $match[1][$key];
+         $limit = $match[2][$key];
+         $view_args = $match[3][$key];
+
+         $view = views_get_view($viewname);
+         $replace = "";
+         
+         if ($view_args != NULL) {
+           $view_args = explode(',', $view_args);
+         }
+         else {
+           $view_args = array();
+         }
+         
+         if ($view) {
+           if ($limit != NULL && is_numeric($limit)) {
+             $replace = views_build_view('embed', views_get_view($viewname), $view_args, FALSE, $limit);
+           }
+           else {
+             $replace = views_build_view('embed', views_get_view($viewname), $view_args, FALSE, NULL);
+           }
+           $mtch[] = $match[0][$key];
+           $repl[] = $replace;
+         }
+       }
+       return str_replace($mtch, $repl, $node->$field);
+    }
+    return $node->$field;
+}

@@ -1,0 +1,312 @@
+<?php
+// $Id: weight.module,v 1.12 2005/12/18 02:21:25 jjeff Exp $
+
+/**
+  * @abstract
+  * This module uses the sticky column of the node table
+  * to add weighting to nodes
+  */
+
+/**
+ * @todo
+ * - Make sure that there is a way to filter by sticky nodes on admin/node
+ */
+
+
+/**
+ * Implementation of hook_help()
+ *
+ */
+
+function weight_help($section) {
+  switch($section) {
+    case 'admin/modules#name':
+      return t('Weight');
+    case 'admin/modules#description':
+      return t('Add weight-based sorting to nodes.');
+    case 'admin/help#weight':
+      return t("
+<p><strong>Description:</strong> The weight module adds a weight option to enabled node types.
+It uses the 'sticky' field in the database to store
+weights as well as sticky information (so that feature
+is not lost). Nodes will be sorted first by stickiness, then by
+weight (lightest to heaviest), then by creation date.</p>
+
+<p><strong>Setup:</strong> To enable weight sorting on existing nodes, visit the
+<a href='%settings'>weight db setup</a> page and click 'Setup Database'
+to convert old sticky values to new weight-encoded values for proper
+sorting.</p>
+
+<p><strong>Permissions:</strong> Users with 'administer nodes' permission will always be able to adjust weight for enabled node types. However, enabling 'assign node weight' will allow non-node-admin users to adjust weight on their own nodes. Find these settings <a href='%access'>here</a>.</p>
+
+", array('%settings' => url('admin/settings/weight/setup'), '%access' => url('admin/access')));
+  }
+}
+
+function weight_perm(){
+  return array('assign node weight');
+}
+
+function weight_menu($may_cache){
+  $items = array();
+  if ($may_cache){
+    $access = user_access('administer site configuration');
+    // top level settings
+    $items[] = array('title' => t('weight'), 'path' => 'admin/settings/weight', 'access' => $access, 'callback'=>'weight_settings_page');
+
+    // 2nd level nav (tabs)
+    $items[] = array('title' => t('settings'), 'path' => 'admin/settings/weight/settings', 'access' => $access, 'callback' => 'weight_settings_page', 'type' => MENU_DEFAULT_LOCAL_TASK);
+    $items[] = array('title' => t('db setup'), 'path' => 'admin/settings/weight/setup', 'access' => $access, 'callback' => 'weight_enable_page', 'type' => MENU_LOCAL_TASK, 'weight' => 4);
+
+    // 3rd level
+    $items[] = array('title' => t('enable'), 'path' => 'admin/settings/weight/setup/enable', 'access' => $access, 'callback' => 'weight_enable_page', 'type' => MENU_DEFAULT_LOCAL_TASK, 'weight' => -2);
+    $items[] = array('title' => t('disable'), 'path' => 'admin/settings/weight/setup/disable', 'access' => $access, 'callback' => 'weight_disable_page', 'type' => MENU_LOCAL_TASK, 'weight' => 2);
+  }
+  return $items;
+}
+
+function weight_nodeapi(&$node, $op) {
+	switch($op) {
+	  // for 4.6:
+		case 'form pre':
+		  if (!weight_formapi() && (user_access('assign node weight') || user_access('administer nodes'))){
+  		  $range = variable_get('weight_range', 20);
+  		  if(function_exists('node_get_types')){
+  		    // 4.7
+  		    $types = array_flip(node_get_types());
+  		  }
+  		  else {
+  		    // 4.6
+  		    $types = node_list();
+  		  }
+
+        if (in_array($node->type, variable_get('weight_node_types', $types))) {
+			   return form_weight(t("Weight"), "weight", $node->weight, $range, t('This node can be weighted within lists. Lower values appear at the beginning and higher sink to the bottom.'));
+      }
+		}
+    break;
+
+  case 'validate':
+  case 'submit':
+      if ($_POST['op'] == t('Submit')) {
+
+        // non-weighted nodes have a weight of zero
+        if (is_null($node->weight)){
+          $node->weight = 0;
+        }
+
+        // here we're 'encoding' weight into the sticky value for the database
+
+        // stickiness is the inverse of weight
+        // - stickiness is sorted DESC while weight is sorted ASC
+        //   so we invert the weight before saving...
+        // if sticky box is checked, add 100 to weight
+        // unweighted sticky nodes will have a value of 100
+        if($node->sticky) {
+          $node->sticky = (-1*$node->weight) + 100;
+        }
+        // unweighted non-sticky nodes will have a value of -100
+        else {
+          $node->sticky = (-1*$node->weight) - 100;
+        }
+      }
+      break;
+
+    case 'load':
+
+      if ($node->sticky > 0) {
+        $node->weight = ($node->sticky - 100)*-1;
+        $node->sticky = 1;
+      }
+      else {
+        $node->weight = (($node->sticky) + 100)*-1;
+        $node->sticky = 0;
+      }
+      //drupal_set_message('<pre>'. print_r($node, true) .'</pre>');
+      break;
+  }
+}
+
+function weight_form_alter($form_id, &$form){
+  // if this is a node form...
+  if (isset($form['type']) && $form['type']['#value'] .'_node_form' == $form_id) {
+    if (user_access('assign node weight') || user_access('administer nodes')) {
+      $node = $form['#node'];
+      if (in_array($node->type, variable_get('weight_node_types', array_flip(node_get_types())))) {
+        $range = variable_get('weight_range', 20);
+        $form["weight_fieldset"] = array(
+          '#type' => 'fieldset',
+          '#title' => 'Weight',
+          '#collapsible' => true,
+          '#collapsed' => ($node->weight == 0),
+          '#weight' => 2,
+        );
+        $form["weight_fieldset"]["weight"] = array(
+          '#type' => 'weight',
+          '#title' => t("Weight"),
+          '#default_value' => $node->weight,
+          '#delta' => $range,
+          '#description' => t('This node can be weighted within lists. Lower values appear at the beginning and higher sink to the bottom.'),
+        );
+      }
+      //return $form;
+    }
+  }
+}
+
+function weight_enable_page(){
+  if ($_POST['op'] == t('Setup Database')) {
+    weight_old_nodes();
+    drupal_goto('admin/settings/weight');
+  }
+  $count = db_num_rows(db_query('SELECT DISTINCT nid FROM {node} WHERE sticky IN (0,1)'));
+  $output = t('<p>The weight module uses the node table\'s "sticky" column to store weight information for each node. New and updated nodes will automatically have their sticky and weight information remapped. However if you have pre-existing nodes, you will need to update your database so that these nodes sort correctly with new nodes.</p>
+  <p>%count nodes need to be updated.</p>', array('%count' => $count));
+  if (weight_formapi()){
+    $form[] = array(
+      '#type' => 'submit',
+      '#value' => t('Setup Database'),
+    );
+    $output .= drupal_get_form('weight_setup', $form);
+  }
+  else {
+    $form = form_submit(t('Setup Database'));
+    $output .= form($form);
+  }
+  return weight_return($output);
+}
+
+function weight_disable_page(){
+  if ($_POST['op'] == t('Remove weights')) {
+    weight_disable();
+    drupal_goto('admin/modules');
+  }
+  $output = t('<p>Before disabling the weight module, you will want to click this button to change the database back to Drupal\'s conventional sticky system.</p>
+  <p><strong>NOTE: Clicking this button will erase any node weights that have been set.</strong></p>');
+  if (weight_formapi()){
+    $form[] = array(
+      '#type' => 'submit',
+      '#value' => t('Remove weights'),
+    );
+    $output .= drupal_get_form('weight_setup_remove', $form);
+  }
+  else {
+    $form = form_submit(t('Remove weights'));
+    $output .= form($form);
+  }
+  return weight_return($output);
+}
+
+/**
+ * Update "old" nodes where sticky is 1 or 0
+ * And resave them with new values so that they will sort correctly
+ * with new and updated nodes
+ *
+ */
+
+function weight_old_nodes(){
+  $count = db_num_rows(db_query('SELECT DISTINCT nid FROM {node} WHERE sticky IN (0,1)'));
+  db_query('UPDATE {node} SET sticky = 100 WHERE sticky = 1');
+  db_query('UPDATE {node} SET sticky = -100 WHERE sticky = 0');
+  if ($count > 0) {
+    drupal_set_message($count . t(' nodes updated to support weight.module'));
+  }
+  else {
+    drupal_set_message(t('No nodes needed to be updated.'));
+  }
+}
+
+
+/**
+ * This function is not called from the module
+ * It is here to show how to set the database back to "normal"
+ * when deactivating the weight.module
+ *
+ */
+
+function weight_disable(){
+  db_query('UPDATE {node} SET sticky = 1 WHERE sticky > 0');
+  db_query('UPDATE {node} SET sticky = 0 WHERE sticky <= 0');
+  drupal_set_message(t('All node weights have been removed. Please deactivate weight module now.'));
+}
+
+function weight_settings_page() {
+  if ($_POST['op'] == t('Update')) {
+    $edit = $_POST['edit'];
+    foreach($edit as $key => $item) {
+      if(weight_formapi() && is_array($item)){
+        $item = array_keys($item);
+      }
+      variable_set($key, $item);
+    }
+    drupal_set_message(t('Settings updated.'));
+  }
+
+	if(function_exists('node_get_types')){
+    // 4.7
+    $types = node_get_types();
+  }
+  else {
+    // 4.6
+    foreach(node_list() as $type){
+      $types[$type] = node_invoke($type, 'node_name');
+    }
+  }
+
+  if (weight_formapi()){
+    $form['weight_range'] = array(
+      '#type' => 'select',
+      '#title' => t('Weight Range'),
+      '#default_value' => variable_get('weight_range', 20),
+      '#options' => array(10=>10, 20=>20, 30=>30, 40=>40),
+      '#description' => t('This will be the +/- range for node weight.'),
+    );
+    $form['weight_node_types'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Display On'),
+      '#default_value' => variable_get('weight_node_types', $types),
+      '#options' => $types,
+      '#description' => t("Add node weighting to these content types."),
+    );
+    $form[] = array(
+      '#type' => 'submit',
+      '#value' => t('Update'),
+    );
+    $output .= drupal_get_form('your_form_id', $form);
+  }
+  else {
+
+    $form = form_select(t('Weight Range'), 'weight_range', variable_get('weight_range', 20), array(10=>10, 20=>20, 30=>30, 40=>40), t('This will be the +/- range for node weight.'));
+    $form .= form_checkboxes(t('Display On'), 'weight_node_types', variable_get('weight_node_types', $types), $types, t("Add node weighting to these content types."));
+    $form .= form_submit(t('Update'));
+    $output .= form($form);
+  }
+
+  $output .= str_replace(array('$RCSf'.'ile:', ',v', '$Re'.'vision: ', '$Da'.'te: ', '$'), '', '<p style="font-size:x-small">$RCSfile: weight.module,v $ version: <b>$Revision: 1.12 $</b>, $Date: 2005/12/18 02:21:25 $</p>');
+  return weight_return($output);
+}
+
+/**
+ * See if this version of Drupal supports the formapi
+ *
+ * @return true or false
+ */
+
+function weight_formapi(){
+  static $bool;
+  if (!isset($bool)) {
+    $bool = function_exists('drupal_get_form');
+  }
+  return $bool;
+}
+
+function weight_return($output){
+  if (weight_formapi()){
+    return $output;
+  }
+  else {
+    print theme('page', $output);
+  }
+}
+
+?>

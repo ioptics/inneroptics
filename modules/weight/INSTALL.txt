@@ -1,0 +1,22 @@
+*******************************************************
+       INSTALL.txt for weight.module for Drupal
+    by Jeff Robbins ::: jeff /@t\ jjeff /d0t\ com
+*******************************************************
+
+INSTALL:
+
+Put the module in your modules directory.
+Enable it.
+Go to admin/settings/weight/setup
+  and click "Setup Database".
+Go to admin/settings/weight
+  and select the weight range as well as which node
+  types should display weight.
+Done.
+
+
+UNINSTALL:
+
+Go to admin/settings/weight/setup/disable
+  and click "Remove Weights".
+Disable the module.

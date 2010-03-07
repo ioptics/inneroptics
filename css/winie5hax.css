@@ -1,0 +1,11 @@
+#threeColBottom {
+  font-size:100%;
+}
+
+#threeColBottom h3 {
+  font-size:120%;
+}
+
+#threeColBottom ul li {
+	height:0;
+}
