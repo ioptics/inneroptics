@@ -3,13 +3,13 @@ html, body {
   background:#2F3E3E;
   color:#616161;
   padding:0;
-  font-size:0.9123em;
-  font-family:"Lucida Grande", Arial, Helvetica, Sans-Serif;
+  font-size:0.9133em;
+  font-family:"Lucida Grande", Open-Serif, Helvetica, Sans-Serif;
   text-align:center;
 }
 
 .padding {
-  padding:10px;
+  padding:8px;
 }
 
 .clear {
@@ -88,7 +88,7 @@ html, body {
   color:#A3B7B2;
   background:inherit;
   padding:0 10px;
-  text-decoration:none;
+  text-decoration:underline;
   letter-spacing:-0.05em;
 }
 
@@ -137,7 +137,7 @@ html, body {
 }
 
 #left-col {
-  width:506px;
+  width:500px;
   float:left;
   background:#F5FDFF;
   color:inherit;
